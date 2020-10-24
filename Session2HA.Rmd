@@ -24,10 +24,47 @@ ratings <- BX_Book_Ratings %>%
 ```
 1. Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
 
+-- Code funktioniert an sich, muss nur noch hübsch und ausformuliert werden 
+
+
+```{r}
+books_neu <- books %>%
+  group_by(Publisher) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl)) %>%
+  filter(Anzahl > 199)
+
+ratings_neu <- ratings %>%
+  group_by(`Publisher`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n() ) %>%
+  arrange(desc(Durchschnittsbewertung)) %>% 
+  drop_na()
+  #filter (AnzahlBewertungen >499)
+
+publisher <- left_join(books_neu, ratings_neu, by="Publisher") #%>%
+  #filter (AnzahlBewertungen>Anzahl) # weil es gab einen bzw. mehrere Ausreiser mit mehr Büchern als Bewertungen.. vermutlich viele Bücher ohne Bewertungen. So würden nur Verlage angezeigt, die mind so viele Bewertungen wie Bücher haben. macht R Wert besser aber keine Ahnung ob richitg 
+
+  
+
+fit <- lm(publisher$Anzahl~publisher$AnzahlBewertungen)
+
+plot(publisher$AnzahlBewertungen, publisher$Anzahl)
+
+abline(fit)
+
+summary(fit)
+
+
+```
+
+
+
+
 ```{r}
   ratings %>%
   filter(`Book-Rating` > 0) %>%
-  count (Publisher, sort = TRUE, name="AnzahlBücher")
+  count (Publisher, sort = TRUE, name="AnzahlBücher") #vermutlich falsch weil Bewertungen pro Verlag gezählt werden 
   #filter(`Publisher` != is.na) %>%   NAs noch wegmachen
 ```
 
