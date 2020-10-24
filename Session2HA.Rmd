@@ -3,33 +3,9 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-
-testtesttest
-testtest
-
-
-# Libraries und Daten laden
-
-Library tidyverse laden, bitte zunächst installieren über "Tools" => "Install Packages"
-
 ```{r}
 library(tidyverse)
 ```
-
-Die Befehle zum Laden der Dateien können einfach aus dem "Import Dataset" kopiert werden
-
-```{r}
-BX_Book_Ratings <- read_delim("BX-Book-Ratings.csv", 
-    ";", escape_double = FALSE, trim_ws = TRUE)
-BX_Books <- read_delim("BX-Books.csv", 
-    ";", escape_double = FALSE, trim_ws = TRUE)
-BX_Users <- read_delim("BX-Users.csv", 
-    ";", escape_double = FALSE, trim_ws = TRUE)
-```
-
-# Säubern und Transformation der Daten
-
-Wir benötigen nicht alle Spalten aus dem Bücher-Dataframe und schreiben das Ergebnis in einen neuen Dataframe:
 
 ```{r}
 books <- BX_Books %>%
@@ -37,19 +13,51 @@ books <- BX_Books %>%
 ```
 
 
-Zunächst einmal wird das Alter von Character auf Numerisch geändert. Das Ergebnis schreiben wir in einen neuen DataFrame:
-
 ```{r}
 users <- BX_Users %>%
   mutate(Age = as.numeric(Age))
 ```
 
-Wir fügen die Buchdaten dem Rating-Datensatz zu:
-
 ```{r}
 ratings <- BX_Book_Ratings %>%
   left_join(BX_Books)
 ```
+1. Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
+
+```{r}
+  ratings %>%
+  filter(`Book-Rating` > 0) %>%
+  count (Publisher, sort = TRUE, name="AnzahlBücher")
+  #filter(`Publisher` != is.na) %>%   NAs noch wegmachen
+```
+
+```{r}
+
+ratings %>%
+  group_by(`Publisher`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n() ) %>%
+  arrange(desc(Durchschnittsbewertung)) %>% 
+  filter (AnzahlBewertungen >9)
+
+
+# ich muss zählen, wie viele Bücher die Verlage jeweils publiziert haben 
+#fit <- lm(ratings$AnzahlBewertungen~ratings$Publisher)
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
 
 Wer sind die häufigsten Publisher?
 
