@@ -1,0 +1,116 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+testtesttest
+testtest
+
+
+# Libraries und Daten laden
+
+Library tidyverse laden, bitte zunächst installieren über "Tools" => "Install Packages"
+
+```{r}
+library(tidyverse)
+```
+
+Die Befehle zum Laden der Dateien können einfach aus dem "Import Dataset" kopiert werden
+
+```{r}
+BX_Book_Ratings <- read_delim("BX-Book-Ratings.csv", 
+    ";", escape_double = FALSE, trim_ws = TRUE)
+BX_Books <- read_delim("BX-Books.csv", 
+    ";", escape_double = FALSE, trim_ws = TRUE)
+BX_Users <- read_delim("BX-Users.csv", 
+    ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
+# Säubern und Transformation der Daten
+
+Wir benötigen nicht alle Spalten aus dem Bücher-Dataframe und schreiben das Ergebnis in einen neuen Dataframe:
+
+```{r}
+books <- BX_Books %>%
+  select(ISBN,`Book-Title`,`Book-Author`,`Year-Of-Publication`,Publisher)
+```
+
+
+Zunächst einmal wird das Alter von Character auf Numerisch geändert. Das Ergebnis schreiben wir in einen neuen DataFrame:
+
+```{r}
+users <- BX_Users %>%
+  mutate(Age = as.numeric(Age))
+```
+
+Wir fügen die Buchdaten dem Rating-Datensatz zu:
+
+```{r}
+ratings <- BX_Book_Ratings %>%
+  left_join(BX_Books)
+```
+
+Wer sind die häufigsten Publisher?
+
+```{r}
+books %>%
+  group_by(Publisher) %>%
+  summarise(Anzahl = n()) 
+```
+Wir haben hier sehr viele Publisher drin, die nur ein Buch veröffentlicht haben, diese sollten wir rausnehmen. Manche Publisher haben aber auch sehr seltsame Namen, so dass dies auch bereinigt werden sollte.
+
+```{r}
+books %>%
+  group_by(Publisher) %>%
+  summarise(Anzahl = n()) %>%
+  arrange(desc(Anzahl)) %>%
+  filter(Anzahl > 49)
+```
+```{r}
+ratings %>%
+  group_by(ISBN) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(Durchschnittsbewertung))
+```
+
+Hausaufgabe: 
+
+1. Welche Bücher sind am besten bewertet? und 2. Sollte die Anzahl der Bewertungen auch mit reinspielen? 
+
+Zahlreiche Bücher haben ein Rating von 10. Dies zeigt die letzte Berechnung aus Ihrem Notebook. Jedoch haben die meisten davon ledigliche ein Bewertung. Ich finde um einen möglichst repräsentativen Wert zu erhalten, sollte eine Mindestanzahl an Bewertungen erreicht werden, um ins Besten-Ranking aufgenommen zu werden. Zum Beispiel mindestens 5 Ratings, in diesem Fall sind folgende ISBNs am besten bewertet. Damit fliegen auch die ungültigen/merkwürdigen ISBNs raus. 
+
+```{r}
+ratings %>%
+  group_by(ISBN) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(Durchschnittsbewertung)) %>%
+  filter(AnzahlBewertungen > 4)
+```
+3. Welche Autoren sind am besten bewertet?
+
+Auch bei den Autoren habe ich eine Mindestanzahl für Bewertungen gewähl, in diesem Fall 10. Damit werden Schreibfehler/andere merkwürdige Autorennamen aussortiert sowie ein repräsentatives Ergebnis erzielt. In diesem Fall haben die drei Autor*innen Michiro Ueyama, Pamela E. Apkarian-Russell und Wataru Yoshizumi mindestens 10 Bewertungen sowie jeweils die Bestnote von 10 bei jeder Bewertung. 
+
+```{r}
+ratings %>%
+  group_by(`Book-Author`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(Durchschnittsbewertung)) %>% 
+  filter (AnzahlBewertungen >9)
+```
+
+4. Welcher Verlag hat die besten Bücher?
+
+Auch beim Verlag habe ich die Mindestanzahl auf 10 gesetzte. Die drei Verlage Collectors Press, Reagent Press	und Plan Nine Pub haben in diesem Fall die besten Bewertungen. 
+
+```{r}
+ratings %>%
+  group_by(`Publisher`) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(Durchschnittsbewertung)) %>% 
+  filter (AnzahlBewertungen >9)
+```
