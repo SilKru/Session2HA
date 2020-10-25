@@ -66,7 +66,21 @@ books_neu2 <- ratings %>%
   group_by(`Book-Title`, `Year-Of-Publication`) %>%
   summarise(AnzahlBewertungenBuch = n()) %>%
   arrange(desc(AnzahlBewertungenBuch))%>%
-  drop_na()
+  drop_na()%>%
+  filter(`Year-Of-Publication`> 1500)%>%
+  filter(`Year-Of-Publication`< 2021)%>% 
+  filter(AnzahlBewertungenBuch < 1000) #Ausreiser rausgefiltert, um Plot anschaulich zu machen
+```
+
+
+```{r}
+fit2 <- lm(books_neu2$AnzahlBewertungenBuch~books_neu2$`Year-Of-Publication`)
+
+(plot(books_neu2$`Year-Of-Publication`, books_neu2$AnzahlBewertungenBuch))
+
+abline(fit2)
+
+(summary(fit2))
 ```
   
 
