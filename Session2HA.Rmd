@@ -43,7 +43,7 @@ ratings_neu <- ratings %>%
   #filter (AnzahlBewertungen >499)
 
 publisher <- left_join(books_neu, ratings_neu, by="Publisher") #%>%
-  #filter (AnzahlBewertungen>Anzahl) # weil es gab einen bzw. mehrere Ausreiser mit mehr Büchern als Bewertungen.. vermutlich viele Bücher ohne Bewertungen. So würden nur Verlage angezeigt, die mind so viele Bewertungen wie Bücher haben. macht R Wert besser aber keine Ahnung ob richitg 
+  #filter (AnzahlBewertungen>Anzahl) # weil es gab einen bzw. mehrere Ausreiser mit mehr Büchern als Bewertungen.. vermutlich viele Bücher ohne Bewertungen. So würden nur Verlage angezeigt, die mind so viele Bewertungen wie Bücher haben. macht R Wert besser aber keine Ahnung ob richitg . Vielleicht als Alternative einfügen
 
   
 
@@ -58,7 +58,17 @@ summary(fit)
 
 ```
 
+2. Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? (muss nicht unbedingt mit einer linearen Regression analysiert werden)
 
+
+```{r}
+books_neu2 <- ratings %>%
+  group_by(`Book-Title`, `Year-Of-Publication`) %>%
+  summarise(AnzahlBewertungenBuch = n()) %>%
+  arrange(desc(AnzahlBewertungenBuch))%>%
+  drop_na()
+```
+  
 
 
 ```{r}
