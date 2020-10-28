@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "Silvia Kruse - Hausaufgabe 2" 
 output: html_notebook
 ---
 
@@ -8,69 +8,92 @@ library(tidyverse)
 ```
 
 ```{r}
-books <- BX_Books %>%
-  select(ISBN,`Book-Title`,`Book-Author`,`Year-Of-Publication`,Publisher)
+(books <- BX_Books %>%
+  select(ISBN,`Book-Title`,`Book-Author`,`Year-Of-Publication`,Publisher))
 ```
 
 
 ```{r}
-users <- BX_Users %>%
-  mutate(Age = as.numeric(Age))
+(users <- BX_Users %>%
+  mutate(Age = as.numeric(Age)))
 ```
 
 ```{r}
-ratings <- BX_Book_Ratings %>%
-  left_join(BX_Books)
+(ratings <- BX_Book_Ratings %>%
+  left_join(BX_Books))
 ```
-1. Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
+Aufgabe 1. Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
 
--- Code funktioniert an sich, muss nur noch hübsch und ausformuliert werden 
+Um diese Frage zu beantworten sind die Anzahl an Büchern eines Verlages sowie die Gesamtzahl der Ratings für diesen Verlag notwendig. Dazu habe ich zunächst sowohl die Tabelle books als auch die Tabelle ratings, ähnlich wie bei der letzten Aufgabe, nach den Publishern sortiert und lediglich die jeweiligen Anzahlen (an Büchern oder Ratings) zusammengefasst. 
 
+Diese Anzahl-Werte habe ich danach mit Hilfe eines join kombiniert und die neue Tabelle publisher mit allen relevanten Werten erstellt. Dabei ist mir aufgefallen, dass gerade die größten Verlage mehr Bücher als Bewertungen haben. Sprich viele Bücher keine Bewertungen erhalten haben. Diese Tatsache würde der Aussage der Aufgabe 1 also schon widersprechen. 
+Ich war mir unsicher, ob diese Verlage evtl. rausgerechnet werden sollten (weil vielleicht mit den Daten etwas nicht stimmt?). Deshalb habe ich eine Filter-Funktion eingebaut, die momentan durch einen Kommentar deaktiviert ist. 
+
+Im Anschluss habe ich einen Plot erstellt und eine lineare Regression durchgeführt.
 
 ```{r}
-books_neu <- books %>%
+(books_neu <- books %>%
   group_by(Publisher) %>%
   summarise(Anzahl = n()) %>%
-  arrange(desc(Anzahl)) %>%
-  filter(Anzahl > 199)
+  arrange(desc(Anzahl)))
+```
 
-ratings_neu <- ratings %>%
+
+```{r}
+(ratings_neu <- ratings %>%
   group_by(`Publisher`) %>%
   filter(`Book-Rating` > 0) %>%
-  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n() ) %>%
-  arrange(desc(Durchschnittsbewertung)) %>% 
-  drop_na()
-  #filter (AnzahlBewertungen >499)
+  summarise(AnzahlBewertungen = n() ) %>%
+  arrange(desc(AnzahlBewertungen)) %>% 
+  drop_na())
+```
 
-publisher <- left_join(books_neu, ratings_neu, by="Publisher") #%>%
-  #filter (AnzahlBewertungen>Anzahl) # weil es gab einen bzw. mehrere Ausreiser mit mehr Büchern als Bewertungen.. vermutlich viele Bücher ohne Bewertungen. So würden nur Verlage angezeigt, die mind so viele Bewertungen wie Bücher haben. macht R Wert besser aber keine Ahnung ob richitg . Vielleicht als Alternative einfügen
 
-  
+```{r}
+(publisher <- left_join(books_neu, ratings_neu, by="Publisher")) #%>%
+  #filter (AnzahlBewertungen>Anzahl))
+```
 
-fit <- lm(publisher$Anzahl~publisher$AnzahlBewertungen)
 
-plot(publisher$AnzahlBewertungen, publisher$Anzahl)
+```{r}
+fit <- lm(publisher$AnzahlBewertungen~publisher$Anzahl)
+
+plot(publisher$Anzahl, publisher$AnzahlBewertungen)
 
 abline(fit)
 
-summary(fit)
-
-
 ```
+Die Bewertung der linearen Regression liefert folgende Ergebnisse: 
+Multiple R-squared:  0.6832,	Adjusted R-squared:  0.6831
+Diese würde ich als "OK" bewerten, jedoch ist die lineare Regression nicht absolut aussagekräftig und die Frage, ob die Anzahl an Büchern eines Verlages mit den Bewertungen pro Verlag linear ansteigt, kann meiner Meinung nach nicht vollkommen zufriedenstellend beantworetet werden. 
 
-2. Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? (muss nicht unbedingt mit einer linearen Regression analysiert werden)
+Wenn man, wie oben bereits beschrieben die Verlage herausfiltert, die mehr Bücher als Ratings haben, werden bessere R-Werte berechnet: 
+Multiple R-squared:  0.843,	Adjusted R-squared:  0.8429  
+Allerdings weiß ich nicht, ob dies nicht eine Verfälschung der Ergebnisse wäre. 
 
 
 ```{r}
-books_neu2 <- ratings %>%
+summary(fit)
+```
+
+Aufgabe 2. Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? (muss nicht unbedingt mit einer linearen Regression analysiert werden)
+
+Um diese Aufgabe zu lösen, habe ich erneut eine neue Tabelle erstellt, welche die Publikationsjahre eines Buches sowie seine Rating-Anzahl verzeichnet. Anschließend wollte ich erneut einen Plot anwenden, um die Verteilung der Datenpunkt zu überprüfen.
+
+Dabei sind mir einige Ungereimtheiten in den Daten aufgefallen, die ich herausgefiltert habe: 1. Einige Bücher waren mit dem Jahr 0 angegeben. Um den Plot übersichtlich zu gestalten habe ich außerdem die wenigen Titel, die vor 1850 erschienen sind herausgefiltert. 
+2. Einige Bücher waren mit Jahren nach 2020 angegeben. Auch diese habe ich herausgefiltert. 
+3. Außerdem habe ich 2 Titel herausgenommen, die über 1000 Bewertungen hatten. Dies habe ich nur gemacht, um den Plot möglichst übersichtlich zu gestalten. (Vermutlich nicht notwendig)
+```{r}
+(books_neu2 <- ratings %>%
   group_by(`Book-Title`, `Year-Of-Publication`) %>%
   summarise(AnzahlBewertungenBuch = n()) %>%
   arrange(desc(AnzahlBewertungenBuch))%>%
   drop_na()%>%
-  filter(`Year-Of-Publication`> 1500)%>%
+  filter(`Year-Of-Publication`> 1850)%>%
   filter(`Year-Of-Publication`< 2021)%>% 
-  filter(AnzahlBewertungenBuch < 1000) #Ausreiser rausgefiltert, um Plot anschaulich zu machen
+  filter(AnzahlBewertungenBuch < 1000))
 ```
+Im Anschluss habe ich einen Plot durchgeführt. An der Verteilung der Datenpunkte kann man erkennen, dass die Annahme aus Aufgabe 2 nicht stimmt. Das Gegenteil ist eher der Fall, denn je neuer ein Titel ist, um so mehr Bewertungen scheint er zu haben (ablesbar aus dem Plot). 
 
 
 ```{r}
@@ -80,106 +103,12 @@ fit2 <- lm(books_neu2$AnzahlBewertungenBuch~books_neu2$`Year-Of-Publication`)
 
 abline(fit2)
 
+```
+
+Die eingefügte lineare Regression ist im Plot gar nicht erkennbar. Schaut man sich die R-Werte der Berechnung an, sind diese auch sehr gering und stützen somit die obige Vermutung (neuere Titel haben mehr Bewertungen), die aus dem Plot ablesbar war.
+Multiple R-squared:  0.003328,	Adjusted R-squared:  0.003325 
+
+```{r}
 (summary(fit2))
 ```
-  
 
-
-```{r}
-  ratings %>%
-  filter(`Book-Rating` > 0) %>%
-  count (Publisher, sort = TRUE, name="AnzahlBücher") #vermutlich falsch weil Bewertungen pro Verlag gezählt werden 
-  #filter(`Publisher` != is.na) %>%   NAs noch wegmachen
-```
-
-```{r}
-
-ratings %>%
-  group_by(`Publisher`) %>%
-  filter(`Book-Rating` > 0) %>%
-  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n() ) %>%
-  arrange(desc(Durchschnittsbewertung)) %>% 
-  filter (AnzahlBewertungen >9)
-
-
-# ich muss zählen, wie viele Bücher die Verlage jeweils publiziert haben 
-#fit <- lm(ratings$AnzahlBewertungen~ratings$Publisher)
-```
-
-
-```{r}
-
-```
-
-
-
-
-
-
-
-
-
-
-Wer sind die häufigsten Publisher?
-
-```{r}
-books %>%
-  group_by(Publisher) %>%
-  summarise(Anzahl = n()) 
-```
-Wir haben hier sehr viele Publisher drin, die nur ein Buch veröffentlicht haben, diese sollten wir rausnehmen. Manche Publisher haben aber auch sehr seltsame Namen, so dass dies auch bereinigt werden sollte.
-
-```{r}
-books %>%
-  group_by(Publisher) %>%
-  summarise(Anzahl = n()) %>%
-  arrange(desc(Anzahl)) %>%
-  filter(Anzahl > 49)
-```
-```{r}
-ratings %>%
-  group_by(ISBN) %>%
-  filter(`Book-Rating` > 0) %>%
-  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
-  arrange(desc(Durchschnittsbewertung))
-```
-
-Hausaufgabe: 
-
-1. Welche Bücher sind am besten bewertet? und 2. Sollte die Anzahl der Bewertungen auch mit reinspielen? 
-
-Zahlreiche Bücher haben ein Rating von 10. Dies zeigt die letzte Berechnung aus Ihrem Notebook. Jedoch haben die meisten davon ledigliche ein Bewertung. Ich finde um einen möglichst repräsentativen Wert zu erhalten, sollte eine Mindestanzahl an Bewertungen erreicht werden, um ins Besten-Ranking aufgenommen zu werden. Zum Beispiel mindestens 5 Ratings, in diesem Fall sind folgende ISBNs am besten bewertet. Damit fliegen auch die ungültigen/merkwürdigen ISBNs raus. 
-
-```{r}
-ratings %>%
-  group_by(ISBN) %>%
-  filter(`Book-Rating` > 0) %>%
-  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
-  arrange(desc(Durchschnittsbewertung)) %>%
-  filter(AnzahlBewertungen > 4)
-```
-3. Welche Autoren sind am besten bewertet?
-
-Auch bei den Autoren habe ich eine Mindestanzahl für Bewertungen gewähl, in diesem Fall 10. Damit werden Schreibfehler/andere merkwürdige Autorennamen aussortiert sowie ein repräsentatives Ergebnis erzielt. In diesem Fall haben die drei Autor*innen Michiro Ueyama, Pamela E. Apkarian-Russell und Wataru Yoshizumi mindestens 10 Bewertungen sowie jeweils die Bestnote von 10 bei jeder Bewertung. 
-
-```{r}
-ratings %>%
-  group_by(`Book-Author`) %>%
-  filter(`Book-Rating` > 0) %>%
-  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
-  arrange(desc(Durchschnittsbewertung)) %>% 
-  filter (AnzahlBewertungen >9)
-```
-
-4. Welcher Verlag hat die besten Bücher?
-
-Auch beim Verlag habe ich die Mindestanzahl auf 10 gesetzte. Die drei Verlage Collectors Press, Reagent Press	und Plan Nine Pub haben in diesem Fall die besten Bewertungen. 
-
-```{r}
-ratings %>%
-  group_by(`Publisher`) %>%
-  filter(`Book-Rating` > 0) %>%
-  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
-  arrange(desc(Durchschnittsbewertung)) %>% 
-  filter (AnzahlBewertungen >9)
-```
